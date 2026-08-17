@@ -8,5 +8,6 @@ __pycache__/
 
 data/input_docs/*
 data/*.sqlite
+data/*.xlsx
 !data/input_docs/sample_receipt.jpg
 

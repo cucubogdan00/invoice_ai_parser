@@ -3,6 +3,7 @@ import logging
 
 from src.services.ai_extractor import AIExtractorService
 from src.repositories.db_manager import DatabaseManager
+from src.services.exporter import ExporterService
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 logger = logging.getLogger(__name__)
@@ -27,6 +28,12 @@ def main():
         logger.info("Connecting to the database...")
         db = DatabaseManager()
         db.save_invoice(invoice_data=extracted_data)
+
+        logger.info("Exporting database records to Excel...")
+        exporter = ExporterService()
+        exporter.export_to_excel()
+
+        logger.info("Pipeline execution finished successfully!")
     except Exception as e:
         logger.error(f"An error occurred during execution: {e}")
 
