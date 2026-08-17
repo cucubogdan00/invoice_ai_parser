@@ -14,7 +14,7 @@ class AIExtractorService:
 
     def __init__(self):
         self.client = genai.Client(api_key=Config.GEMINI_API_KEY)
-        self.model_name = 'gemini-3.7-flash'
+        self.model_name = 'gemini-3.5-flash'
         logger.info("AIExtractorService initialized successfully with google-genai.")
 
     def extract_data(self, file_path: str) -> InvoiceData:
