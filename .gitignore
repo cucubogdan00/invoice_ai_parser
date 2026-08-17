@@ -6,3 +6,6 @@ venv/
 __pycache__/
 *.pyc
 
+data/input_docs/*
+!data/input_docs/sample_receipt.jpg
+

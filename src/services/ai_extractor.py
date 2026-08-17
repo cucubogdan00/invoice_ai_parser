@@ -1,9 +1,8 @@
 import os
-import json
 import logging
-import google.generativeai as genai
 
-from google.generativeai.types import GenerationConfig
+from google import genai
+from google.genai import types
 from src.utils.config import Config
 from src.models.schemas import InvoiceData
 
@@ -13,9 +12,9 @@ logger = logging.getLogger(__name__)
 class AIExtractorService:
 
     def __init__(self):
-        genai.configure(api_key=Config.GEMINI_API_KEY)
-        self.model = genai.GenerativeModel('gemini-1.5-flash')
-        logger.info("AIExtractorService initialized successfully.")
+        self.client = genai.Client(api_key=Config.GEMINI_API_KEY)
+        self.model_name = 'gemini-3.7-flash'
+        logger.info("AIExtractorService initialized successfully with google-genai.")
 
     def extract_data(self, file_path: str) -> InvoiceData:
         if not os.path.exists(file_path):
@@ -23,7 +22,8 @@ class AIExtractorService:
             raise FileNotFoundError(f"The file {file_path} was not found.")
 
         logger.info(f"Uploading {file_path} to Gemini API...")
-        uploaded_file = genai.upload_file(path=file_path)
+
+        uploaded_file = self.client.files.upload(file=file_path)
 
         prompt = (
             "Analyze this invoice/receipt document. Extract all the relevant details "
@@ -32,17 +32,16 @@ class AIExtractorService:
 
         logger.info("Processing document with AI... Please wait.")
         try:
-            response = self.model.generate_content(
-                [prompt, uploaded_file],
-                generation_config=GenerationConfig(
+            response = self.client.models.generate_content(
+                model=self.model_name,
+                contents=[prompt, uploaded_file],
+                config=types.GenerateContentConfig(
                     response_mime_type="application/json",
                     response_schema=InvoiceData
                 )
             )
 
-            raw_json_data = json.loads(response.text)
-
-            validated_data = InvoiceData(**raw_json_data)
+            validated_data = response.parsed
 
             logger.info("Data extracted and validated successfully!")
             return validated_data
@@ -51,6 +50,6 @@ class AIExtractorService:
             raise
         finally:
             logger.info("Cleaning up temporary file from Google servers.")
-            uploaded_file.delete()
+            self.client.files.delete(name=uploaded_file.name)
 
         
