@@ -1,5 +1,6 @@
 import os
 import logging
+import time
 
 from google import genai
 from google.genai import types
@@ -31,22 +32,37 @@ class AIExtractorService:
         )
 
         logger.info("Processing document with AI... Please wait.")
+
+        max_retries = 3
+
         try:
-            response = self.client.models.generate_content(
-                model=self.model_name,
-                contents=[prompt, uploaded_file],
-                config=types.GenerateContentConfig(
-                    response_mime_type="application/json",
-                    response_schema=InvoiceData
-                )
-            )
+            for attempt in range(max_retries):
+                try:
+                    response = self.client.models.generate_content(
+                        model=self.model_name,
+                        contents=[prompt, uploaded_file],
+                        config=types.GenerateContentConfig(
+                            response_mime_type="application/json",
+                            response_schema=InvoiceData
+                        )
+                    )
 
-            validated_data = response.parsed
+                    validated_data = response.parsed
 
-            logger.info("Data extracted and validated successfully!")
-            return validated_data
-        except Exception as e:
-            logger.error(f"Failed to extract data: {e}")
+                    logger.info("Data extracted and validated successfully!")
+                    return validated_data
+                except Exception as e:
+                    error_message = str(e)
+
+                    if '503' in error_message and attempt < max_retries - 1: 
+                        sleep_time = 2 ** attempt
+                        logger.warning(f"Server is busy (503). Retrying in {sleep_time} seconds (Attempt {attempt + 1}/{max_retries})...")
+                        time.sleep(sleep_time)
+                    else:
+                        raise e
+                    
+        except Exception as final_e:
+            logger.error(f"Failed to extract data after multiple attempts: {final_e}")
             raise
         finally:
             logger.info("Cleaning up temporary file from Google servers.")
