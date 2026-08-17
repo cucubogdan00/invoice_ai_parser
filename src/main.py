@@ -2,6 +2,7 @@ import os
 import logging
 
 from src.services.ai_extractor import AIExtractorService
+from src.repositories.db_manager import DatabaseManager
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 logger = logging.getLogger(__name__)
@@ -17,13 +18,15 @@ def main():
 
     try:
         extractor = AIExtractorService()
-
         logger.info(f"Initiating extraction for: {test_file_path}")
         extracted_data = extractor.extract_data(file_path=test_file_path)
 
         logger.info("Extraction complete! Here are the structured results:")
-
         print("\n" + extracted_data.model_dump_json(indent=2) + "\n")
+
+        logger.info("Connecting to the database...")
+        db = DatabaseManager()
+        db.save_invoice(invoice_data=extracted_data)
     except Exception as e:
         logger.error(f"An error occurred during execution: {e}")
 

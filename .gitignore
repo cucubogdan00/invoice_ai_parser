@@ -7,5 +7,6 @@ __pycache__/
 *.pyc
 
 data/input_docs/*
+data/*.sqlite
 !data/input_docs/sample_receipt.jpg
 
