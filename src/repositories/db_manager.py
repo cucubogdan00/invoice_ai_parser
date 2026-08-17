@@ -23,9 +23,19 @@ class DatabaseManager:
                 CREATE TABLE IF NOT EXISTS invoices (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     merchant_name TEXT NOT NULL,
+                    merchant_cif TEXT,
+                    merchant_iban TEXT,
+                    client_name TEXT,
+                    client_code TEXT,
+                    client_address TEXT,
                     invoice_number TEXT,
                     date TEXT,
-                    total_amount REAL
+                    due_date TEXT,
+                    billing_period TEXT,
+                    total_amount REAL,
+                    previous_balance REAL,
+                    total_payable REAL,
+                    currency TEXT
                 )
             """)
 
@@ -36,6 +46,8 @@ class DatabaseManager:
                     description TEXT,
                     quantity REAL,
                     unit_price REAL,
+                    tax_amount REAL,
+                    total_price REAL,
                     FOREIGN KEY (invoice_id) REFERENCES invoices (id)
                 )
             """)
@@ -49,26 +61,45 @@ class DatabaseManager:
                 cursor = conn.cursor()
 
                 cursor.execute("""
-                    INSERT INTO invoices (merchant_name, invoice_number, date, total_amount)
-                    VALUES (?, ?, ?, ?)
+                    INSERT INTO invoices (
+                        merchant_name, merchant_cif, merchant_iban,
+                        client_name, client_code, client_address,
+                        invoice_number, date, due_date, billing_period,
+                        total_amount, previous_balance, total_payable, currency
+                    )
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, (
                     invoice_data.merchant_name,
+                    invoice_data.merchant_cif,
+                    invoice_data.merchant_iban,
+                    invoice_data.client_name,
+                    invoice_data.client_code,
+                    invoice_data.client_address,
                     invoice_data.invoice_number,
                     invoice_data.date,
-                    invoice_data.total_amount
+                    invoice_data.due_date,
+                    invoice_data.billing_period,
+                    invoice_data.total_amount,
+                    invoice_data.previous_balance,
+                    invoice_data.total_payable,
+                    invoice_data.currency
                 ))
 
                 invoice_id = cursor.lastrowid
 
                 for item in invoice_data.items:
                     cursor.execute("""
-                        INSERT INTO invoice_items (invoice_id, description, quantity, unit_price)
-                        VALUES (?, ?, ?, ?)
+                        INSERT INTO invoice_items (
+                            invoice_id, description, quantity, unit_price, tax_amount, total_price
+                        )
+                        VALUES (?, ?, ?, ?, ?, ?)
                     """, (
                         invoice_id,
                         item.description,
                         item.quantity,
-                        item.unit_price
+                        item.unit_price,
+                        item.tax_amount,
+                        item.total_price
                     ))
 
                 conn.commit()
