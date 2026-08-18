@@ -93,3 +93,7 @@ python -m src.main
 
 **Bogdan Cucu**  - https://github.com/cucubogdan00
 Software Developer 
+
+## ⚖️ License
+
+Distributed under the MIT License. See the `LICENSE` file for more information.
