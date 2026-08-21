@@ -35,7 +35,8 @@ class DatabaseManager:
                     total_amount REAL,
                     previous_balance REAL,
                     total_payable REAL,
-                    currency TEXT
+                    currency TEXT,
+                    UNIQUE(merchant_name, invoice_number)
                 )
             """)
 
@@ -59,6 +60,19 @@ class DatabaseManager:
         try:
             with sqlite3.connect(self.db_path) as conn:
                 cursor = conn.cursor()
+
+                cursor.execute("""
+                    SELECT id FROM invoices
+                    WHERE merchant_name = ? AND invoice_number = ?
+                """, (invoice_data.merchant_name, invoice_data.invoice_number))
+
+                existing_record = cursor.fetchone()
+                if existing_record:
+                    logger.warning(
+                        f"Invoice '{invoice_data.invoice_number}' from '{invoice_data.merchant_name}' "
+                        f"already exists in database. Skipping duplicate."
+                    )
+                    return False
 
                 cursor.execute("""
                     INSERT INTO invoices (
@@ -104,6 +118,7 @@ class DatabaseManager:
 
                 conn.commit()
                 logger.info(f"Invoice '{invoice_data.invoice_number}' saved to database successfully.")
+                return True
         except Exception as e:
             logger.error(f"Database error while saving invoice: {e}")
             raise e
